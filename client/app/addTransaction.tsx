@@ -61,6 +61,10 @@ export default function AddTransaction() {
                             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                             setSelectedCategory(match);
                         }
+                    } else {
+                        // NEW: NO MATCH FOUND? Clear the selection!
+                        // This fixes the "Toilet Paper stuck on Housing" bug
+                        setSelectedCategory(null);
                     }
                 } catch (error) {
                     // Quiet fail
@@ -78,6 +82,20 @@ export default function AddTransaction() {
         setDescription(text);
         // If user types, we unlock manual mode to allow AI to suggest again
         setIsManualCategory(false);
+    };
+
+    // Handle Amount Change with Commas
+    const handleAmountChange = (text: string) => {
+        // 1. Remove existing commas to get raw value
+        const clean = text.replace(/,/g, '');
+
+        // 2. Validate: Allow only numbers and one decimal point
+        if (/^\d*\.?\d*$/.test(clean)) {
+            const parts = clean.split('.');
+            // 3. Add commas to integer part
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            setAmount(parts.join('.'));
+        }
     };
 
     // Handle creating a NEW category (from the "Other" input)
@@ -119,7 +137,7 @@ export default function AddTransaction() {
 
             const payload = {
                 user_id: session?.user?.id,
-                amount: parseFloat(amount),
+                amount: parseFloat(amount.replace(/,/g, '')), // Strip commas before sending
                 type,
                 description,
                 category_id: finalCategoryId || null, // If null, it goes to "Uncategorized" bucket
@@ -168,7 +186,7 @@ export default function AddTransaction() {
                     placeholder="0.00"
                     keyboardType="numeric"
                     value={amount}
-                    onChangeText={setAmount}
+                    onChangeText={handleAmountChange}
                 />
             </View>
 
