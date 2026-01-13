@@ -58,7 +58,9 @@ export default function AddTransaction() {
                     if (res.data.category_id) {
                         const match = categories.find((c: any) => c.id === res.data.category_id);
                         if (match) {
-                            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                            if (Platform.OS !== 'web') {
+                                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                            }
                             setSelectedCategory(match);
                         }
                     }
@@ -78,6 +80,20 @@ export default function AddTransaction() {
         setDescription(text);
         // If user types, we unlock manual mode to allow AI to suggest again
         setIsManualCategory(false);
+    };
+
+    // Handle Amount Change with Commas
+    const handleAmountChange = (text: string) => {
+        // 1. Remove existing commas to get raw value
+        const clean = text.replace(/,/g, '');
+
+        // 2. Validate: Allow only numbers and one decimal point
+        if (/^\d*\.?\d*$/.test(clean)) {
+            const parts = clean.split('.');
+            // 3. Add commas to integer part
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            setAmount(parts.join('.'));
+        }
     };
 
     // Handle creating a NEW category (from the "Other" input)
@@ -119,7 +135,7 @@ export default function AddTransaction() {
 
             const payload = {
                 user_id: session?.user?.id,
-                amount: parseFloat(amount),
+                amount: parseFloat(amount.replace(/,/g, '')), // Strip commas before sending
                 type,
                 description,
                 category_id: finalCategoryId || null, // If null, it goes to "Uncategorized" bucket
@@ -141,8 +157,14 @@ export default function AddTransaction() {
     };
 
     return (
-        <View style={styles.container}>
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.contentContainer}
+            keyboardShouldPersistTaps="handled" // Allows tapping buttons while keyboard is open
+        >
             <Text style={styles.header}>New Transaction</Text>
+
+            {/* ... Content ... */}
 
             {/* Type Toggle */}
             <View style={styles.toggleContainer}>
@@ -168,7 +190,7 @@ export default function AddTransaction() {
                     placeholder="0.00"
                     keyboardType="numeric"
                     value={amount}
-                    onChangeText={setAmount}
+                    onChangeText={handleAmountChange}
                 />
             </View>
 
@@ -179,7 +201,7 @@ export default function AddTransaction() {
                     style={styles.input}
                     placeholder="e.g. Rice at Chicken Republic"
                     value={description}
-                    onChangeText={handleDescriptionChange} // <--- UPDATED
+                    onChangeText={handleDescriptionChange}
                 />
                 {isPredicting && <ActivityIndicator style={{ position: 'absolute', right: 15, top: 45 }} />}
             </View>
@@ -252,12 +274,13 @@ export default function AddTransaction() {
             <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
                 <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
-        </View>
+        </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 20, backgroundColor: '#f8fafc', paddingTop: 40 },
+    container: { flex: 1, backgroundColor: '#f8fafc' },
+    contentContainer: { padding: 20, paddingTop: 40, paddingBottom: 60 },
     header: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#0f172a' },
 
     toggleContainer: { flexDirection: 'row', backgroundColor: '#e2e8f0', borderRadius: 12, padding: 4, marginBottom: 25 },
@@ -267,7 +290,7 @@ const styles = StyleSheet.create({
     toggleText: { fontWeight: '600', color: '#64748b' },
     activeText: { color: '#fff' },
 
-    inputGroup: { marginBottom: 20 },
+    inputGroup: { marginBottom: 20, position: 'relative' },
     label: { fontSize: 14, color: '#64748b', marginBottom: 8, fontWeight: '500' },
     input: { backgroundColor: '#fff', padding: 15, borderRadius: 12, fontSize: 16, borderWidth: 1, borderColor: '#e2e8f0' },
     inputLarge: { backgroundColor: '#fff', padding: 15, borderRadius: 12, fontSize: 32, fontWeight: 'bold', borderWidth: 1, borderColor: '#e2e8f0', textAlign: 'center', color: '#0f172a' },
