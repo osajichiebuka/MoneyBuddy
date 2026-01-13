@@ -38,7 +38,6 @@ const signup = async (req, res) => {
       .upsert({
         id: authData.user.id,
         username: full_name,
-        currency: 'NGN', // Default currency as per specs
         updated_at: new Date().toISOString()
       });
 
@@ -54,6 +53,7 @@ const signup = async (req, res) => {
     });
 
   } catch (error) {
+    console.error("Signup Error Details:", error); // Added for debugging
     res.status(400).json({ error: error.message });
   }
 };

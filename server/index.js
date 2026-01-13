@@ -5,6 +5,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const { createClient } = require('@supabase/supabase-js');
 const authRoutes = require('./routes/authRoutes');
+const transactionRoutes = require('./routes/transactionRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 
 // ==========================================
 // 1. CONFIGURATION
@@ -36,6 +38,9 @@ app.use(express.json()); // Parse JSON bodies
 
 // Mount Auth Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/categories', categoryRoutes);
+
 
 // Health Check
 app.get('/', (req, res) => {
