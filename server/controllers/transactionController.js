@@ -1,4 +1,63 @@
 const supabase = require('../config/supabaseClient');
+const { parseBankStatement } = require('../services/pdfParserService');
+
+exports.uploadStatement = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const userId = req.user?.id || req.body.user_id; // Handle both auth middleware and manual ID
+
+    // 1. Parse PDF
+    console.log('Parsing PDF...');
+    const rawTransactions = await parseBankStatement(req.file.buffer);
+
+    if (rawTransactions.length === 0) {
+      return res.status(400).json({ message: 'No transactions found. Check PDF format.' });
+    }
+
+    // 2. Auto-Categorize & Prepare for DB
+    // We fetch the global index once to avoid loop querying
+    const { data: globalIndex } = await supabase.from('global_vendor_index').select('*');
+
+    const preparedTransactions = rawTransactions.map(tx => {
+      // Simple keyword matching logic
+      const matchedVendor = globalIndex?.find(vendor =>
+        tx.description.toLowerCase().includes(vendor.keyword.toLowerCase())
+      );
+
+      return {
+        user_id: userId,
+        amount: tx.amount,
+        direction: tx.type === 'income' ? 'INCOME' : 'EXPENSE', // Normalize to DB schema
+        vendor_name: tx.description, // Map description to vendor_name
+        status: 'CONFIRMED',
+        date: new Date(tx.date).toISOString(), // Ensure Postgres format
+        category_id: matchedVendor ? matchedVendor.category_id : null, // Auto-assign or null
+        source_type: 'STATEMENT_IMPORT' // Helpful to track where data came from
+      };
+    });
+
+    // 3. Bulk Insert into Supabase
+    const { data, error } = await supabase
+      .from('transactions')
+      .insert(preparedTransactions)
+      .select();
+
+    if (error) throw error;
+
+    res.status(200).json({
+      message: 'Statement processed successfully',
+      imported_count: data.length,
+      transactions: data
+    });
+
+  } catch (error) {
+    console.error('Upload Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
 
 exports.addTransaction = async (req, res) => {
   console.log("--> addTransaction Body:", req.body); // DEBUG LOG
