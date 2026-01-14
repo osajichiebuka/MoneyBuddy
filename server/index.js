@@ -7,6 +7,7 @@ const { createClient } = require('@supabase/supabase-js');
 const authRoutes = require('./routes/authRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const budgetRoutes = require('./routes/budgetRoutes');
 
 // ==========================================
 // 1. CONFIGURATION
@@ -31,7 +32,6 @@ app.use(helmet()); // Secure HTTP headers
 app.use(cors()); // Allow cross-origin requests
 app.use(morgan('dev')); // Logger
 app.use(express.json()); // Parse JSON bodies
-
 // ==========================================
 // 3. ROUTES
 // ==========================================
@@ -40,6 +40,7 @@ app.use(express.json()); // Parse JSON bodies
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/budgets', budgetRoutes);
 
 
 // Health Check

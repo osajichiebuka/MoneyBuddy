@@ -1,7 +1,7 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -22,15 +22,17 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
         headerShown: useClientOnlyValue(false, true),
+        tabBarStyle: { paddingBottom: 5, height: 60 },
+        tabBarLabelStyle: { fontSize: 12, marginBottom: 5 }
       }}>
+
+      {/* 1. HOME TAB */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Home',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 24 }}>🏠</Text>,
           headerRight: () => (
             <Link href="/modal" asChild>
               <Pressable>
@@ -47,12 +49,30 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      {/* 2. BUDGET TAB */}
       <Tabs.Screen
-        name="two"
+        name="budgets"
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Budgets',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 24 }}>🛡️</Text>,
         }}
+      />
+
+      {/* 3. PROFILE TAB */}
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 24 }}>👤</Text>,
+        }}
+      />
+      <Tabs.Screen 
+        name="insights" 
+        options={{ 
+          title: 'Insights',
+          tabBarIcon: ({ color }) => <Text style={{color, fontSize: 24}}>📊</Text> 
+        }} 
       />
     </Tabs>
   );

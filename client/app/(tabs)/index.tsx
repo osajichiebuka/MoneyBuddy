@@ -1,12 +1,12 @@
 import React, { useState, useCallback } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  ActivityIndicator, 
-  TouchableOpacity, 
-  FlatList, 
-  RefreshControl, 
+import {
+  StyleSheet,
+  Text,
+  View,
+  ActivityIndicator,
+  TouchableOpacity,
+  FlatList,
+  RefreshControl,
   Alert
 } from 'react-native';
 import axios from 'axios';
@@ -22,7 +22,7 @@ export default function Dashboard() {
   const router = useRouter();
   const { session, logout } = useAuth();
   const API_URL = API_BASE_URL || 'http://localhost:5000';
-  
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dashboardData, setDashboardData] = useState<any>({
@@ -54,7 +54,7 @@ export default function Dashboard() {
     try {
       const res = await axios.get(`${API_URL}/api/categories/list?user_id=${session?.user?.id}`);
       setAllCategories(res.data);
-    } catch (e) {}
+    } catch (e) { }
   };
 
   useFocusEffect(
@@ -72,7 +72,7 @@ export default function Dashboard() {
     const oldData = dashboardData;
     setDashboardData({
       ...dashboardData,
-      recentTransactions: dashboardData.recentTransactions.filter((t:any) => t.id !== id)
+      recentTransactions: dashboardData.recentTransactions.filter((t: any) => t.id !== id)
     });
 
     try {
@@ -99,26 +99,26 @@ export default function Dashboard() {
     if (!selectedTxn) return;
 
     // Optimistic Update
-    const updatedTxns = dashboardData.recentTransactions.map((t:any) => {
-        if (t.id === selectedTxn.id) {
-            return { ...t, category: newCategory, category_id: newCategory.id };
-        }
-        return t;
+    const updatedTxns = dashboardData.recentTransactions.map((t: any) => {
+      if (t.id === selectedTxn.id) {
+        return { ...t, category: newCategory, category_id: newCategory.id };
+      }
+      return t;
     });
     setDashboardData({ ...dashboardData, recentTransactions: updatedTxns });
 
     try {
-        // We need a backend endpoint to update just the category.
-        // For now, let's assume we use a generic 'update' or just 'add' route with an ID?
-        // Actually, let's create a quick 'update' endpoint logic in our heads or just standard POST.
-        // Quick Fix: We need an update endpoint.
-        await axios.put(`${API_URL}/api/transactions/update/${selectedTxn.id}`, {
-            category_id: newCategory.id,
-            user_id: session?.user?.id
-        });
+      // We need a backend endpoint to update just the category.
+      // For now, let's assume we use a generic 'update' or just 'add' route with an ID?
+      // Actually, let's create a quick 'update' endpoint logic in our heads or just standard POST.
+      // Quick Fix: We need an update endpoint.
+      await axios.put(`${API_URL}/api/transactions/update/${selectedTxn.id}`, {
+        category_id: newCategory.id,
+        user_id: session?.user?.id
+      });
     } catch (error) {
-        console.error("Failed to update category");
-        fetchDashboardData(); // Revert by refetching
+      console.error("Failed to update category");
+      fetchDashboardData(); // Revert by refetching
     }
   };
 
@@ -136,30 +136,32 @@ export default function Dashboard() {
       <View style={styles.card}>
         <Text style={styles.label}>Total Balance</Text>
         <Text style={styles.balance}>
-            {dashboardData.balance.toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })}
+          {dashboardData.balance.toLocaleString('en-NG', { style: 'currency', currency: 'NGN' })}
         </Text>
       </View>
+
+
 
       {/* THE NEW LIST */}
       <View style={styles.listHeader}>
         <Text style={styles.sectionTitle}>Recent Activity</Text>
         <TouchableOpacity onPress={() => router.push('/history')}>
-            <Text style={{ color: '#10B981' }}>See All</Text>
+          <Text style={{ color: '#10B981' }}>See All</Text>
         </TouchableOpacity>
       </View>
-      
+
       {loading ? (
         <ActivityIndicator size="large" color="#10B981" />
       ) : (
         <FlatList
           data={dashboardData.recentTransactions}
-          keyExtractor={(item:any) => item.id}
+          keyExtractor={(item: any) => item.id}
           renderItem={({ item }) => (
-            <TransactionRow 
-                item={item} 
-                onDelete={handleDelete}
-                onSplit={handleSplit}
-                onRecategorize={handleRecategorizeSwipe}
+            <TransactionRow
+              item={item}
+              onDelete={handleDelete}
+              onSplit={handleSplit}
+              onRecategorize={handleRecategorizeSwipe}
             />
           )}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchDashboardData(); }} />}
@@ -173,7 +175,7 @@ export default function Dashboard() {
       </TouchableOpacity>
 
       {/* The Category Picker (Hidden until Recategorize is swiped) */}
-      <CategoryModal 
+      <CategoryModal
         visible={showCategoryPicker}
         onClose={() => setShowCategoryPicker(false)}
         onSelect={handleCategorySelect}
