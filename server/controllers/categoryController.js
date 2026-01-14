@@ -1,33 +1,46 @@
 const supabase = require('../config/supabaseClient');
 
 // 1. Get All Categories (System Defaults + User's Custom)
+// 1. Get All Categories (System Defaults + User's Custom)
 exports.getCategories = async (req, res) => {
   const { user_id } = req.query;
+  console.log("--> getCategories user_id:", user_id); // DEBUG LOG
 
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('categories')
       .select('*')
-      .or(`is_system_default.eq.true,user_id.eq.${user_id}`) // Logic: Give me Defaults OR Mine
       .order('name', { ascending: true });
+
+    if (user_id && user_id !== 'undefined') {
+      // Fetch Defaults OR User's own
+      query = query.or(`is_system_default.eq.true,user_id.eq.${user_id}`);
+    } else {
+      // Fallback: Only Defaults
+      query = query.eq('is_system_default', true);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
     res.status(200).json(data);
   } catch (error) {
+    console.error("GetCategories Error:", error);
     res.status(400).json({ error: error.message });
   }
 };
 
 // 2. Create a Custom Category
 exports.createCategory = async (req, res) => {
-  const { name, type, user_id, icon } = req.body;
+  // 👇 REMOVED 'type' from here
+  const { name, user_id, icon } = req.body;
 
   try {
-    // Check if it already exists for this user to avoid duplicates
+    // Check for duplicates
     const { data: existing } = await supabase
       .from('categories')
-      .select('id')
+      .select('id, name, icon')
       .eq('name', name)
       .eq('user_id', user_id)
       .single();
@@ -36,15 +49,16 @@ exports.createCategory = async (req, res) => {
       return res.status(200).json({ message: 'Category already exists', data: existing });
     }
 
+    // Create new
     const { data, error } = await supabase
       .from('categories')
       .insert([
-        { 
-          name, 
-          type, 
-          user_id, 
-          icon: icon || '✨', // Default sparkle for custom ones
-          is_system_default: false 
+        {
+          name,
+          user_id,
+          icon: icon || '✨',
+          is_system_default: false
+          // 👇 REMOVED 'type' from the insert object
         }
       ])
       .select();
@@ -53,6 +67,7 @@ exports.createCategory = async (req, res) => {
 
     res.status(201).json({ message: 'Custom category created!', data: data[0] });
   } catch (error) {
+    console.error("Create Category Error:", error.message); // Added logging
     res.status(400).json({ error: error.message });
   }
 };
